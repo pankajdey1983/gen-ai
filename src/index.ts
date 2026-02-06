@@ -5,6 +5,7 @@
  * Provides tools for managing pull request comments and coding patterns
  */
 
+import 'dotenv/config';
 import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 import {
@@ -14,18 +15,21 @@ import {
 } from '@modelcontextprotocol/sdk/types.js';
 import { AzureDevOpsService } from './azure-devops-service.js';
 import { PatternManager } from './pattern-manager.js';
+import { TemplateManager } from './template-manager.js';
 import { getConfig } from './config.js';
-import { PullRequestComment, CodingPattern } from './types.js';
+import { PullRequestComment, CodingPattern, PRStrategyTemplate } from './types.js';
 import { promises as fs } from 'fs';
 
 // Initialize services
 let azureDevOpsService: AzureDevOpsService;
 let patternManager: PatternManager;
+let templateManager: TemplateManager;
 
 try {
   const config = getConfig();
   azureDevOpsService = new AzureDevOpsService(config);
   patternManager = new PatternManager();
+  templateManager = new TemplateManager();
 } catch (error) {
   console.error('Configuration error:', error);
   process.exit(1);
@@ -185,6 +189,83 @@ const tools: Tool[] = [
       required: ['pullRequestId'],
     },
   },
+  {
+    name: 'get_pr_strategy_templates',
+    description:
+      'Get all PR review strategy templates from .pd/pr-templates.md. Returns helpful prompts and guidelines for reviewing pull requests based on different review types (feature, bug fix, refactoring, etc.).',
+    inputSchema: {
+      type: 'object',
+      properties: {},
+      required: [],
+    },
+  },
+  {
+    name: 'get_pr_strategy_template',
+    description:
+      'Get a specific PR review strategy template by name. Returns a focused prompt to guide the PR review process.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        name: {
+          type: 'string',
+          description: 'Name of the template to retrieve (e.g., "Comprehensive Code Review", "Bug Fix Review", "Feature Review")',
+        },
+      },
+      required: ['name'],
+    },
+  },
+  {
+    name: 'list_pr_strategy_templates',
+    description:
+      'List all available PR review strategy template names and categories. Use this to discover what templates are available.',
+    inputSchema: {
+      type: 'object',
+      properties: {},
+      required: [],
+    },
+  },
+  {
+    name: 'add_pr_strategy_template',
+    description:
+      'Add a new PR review strategy template to .pd/pr-templates.md. Use this to create custom review prompts for specific scenarios.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        name: {
+          type: 'string',
+          description: 'Name of the template',
+        },
+        description: {
+          type: 'string',
+          description: 'Brief description of when to use this template',
+        },
+        prompt: {
+          type: 'string',
+          description: 'The detailed strategy prompt/guidelines for the review',
+        },
+        category: {
+          type: 'string',
+          description: 'Category (e.g., "Feature Review", "Bug Fix", "Security Review", "Performance")',
+        },
+      },
+      required: ['name', 'prompt', 'category'],
+    },
+  },
+  {
+    name: 'update_pr_templates_file',
+    description:
+      'Update the entire .pd/pr-templates.md file with new content. Use this to reorganize or bulk update templates.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        content: {
+          type: 'string',
+          description: 'Full markdown content for the PR templates file',
+        },
+      },
+      required: ['content'],
+    },
+  },
 ];
 
 // Create server instance
@@ -192,6 +273,7 @@ const server = new Server(
   {
     name: 'azure-devops-mcp-server',
     version: '1.0.0',
+    description: 'Azure DevOps integration for pull request code reviews. Provides PR strategy templates with review prompts, retrieves PR comments and changes, manages coding patterns, and updates comment status. Use this when reviewing code, analyzing PRs, or needing guidance on code review best practices.',
   },
   {
     capabilities: {
@@ -497,6 +579,119 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
             {
               type: 'text',
               text: formattedChanges,
+            },
+          ],
+        };
+      }
+
+      case 'get_pr_strategy_templates': {
+        const templates = await templateManager.readTempglates();
+        return {
+          content: [
+            {
+              type: 'text',
+              text: templates,
+            },
+          ],
+        };
+      }
+
+      case 'get_pr_strategy_template': {
+        const name = args?.name as string;
+        if (!name) {
+          throw new Error('name is required');
+        }
+
+        const template = await templateManager.getTemplate(name);
+        if (!template) {
+          return {
+            content: [
+              {
+                type: 'text',
+                text: `Template "${name}" not found. Use list_pr_strategy_templates to see available templates.`,
+              },
+            ],
+            isError: true,
+          };
+        }
+
+        const formattedTemplate = `# ${template.name}
+
+**Category:** ${template.category}
+${template.description ? `**Description:** ${template.description}\n` : ''}
+**Prompt:**
+
+${template.prompt}`;
+
+        return {
+          content: [
+            {
+              type: 'text',
+              text: formattedTemplate,
+            },
+          ],
+        };
+      }
+
+      case 'list_pr_strategy_templates': {
+        const templates = await templateManager.listTemplates();
+        const formatted = templates.map(t => 
+          `- **${t.name}** (${t.category})${t.description ? `: ${t.description}` : ''}`
+        ).join('\n');
+
+        return {
+          content: [
+            {
+              type: 'text',
+              text: `Available PR Strategy Templates:\n\n${formatted}`,
+            },
+          ],
+        };
+      }
+
+      case 'add_pr_strategy_template': {
+        const name = args?.name as string;
+        const description = args?.description as string;
+        const prompt = args?.prompt as string;
+        const category = args?.category as string;
+
+        if (!name || !prompt || !category) {
+          throw new Error('name, prompt, and category are required');
+        }
+
+        const template: PRStrategyTemplate = {
+          name,
+          description: description || '',
+          prompt,
+          category,
+          dateAdded: new Date().toISOString().split('T')[0],
+        };
+
+        await templateManager.addTemplate(template);
+
+        return {
+          content: [
+            {
+              type: 'text',
+              text: `Successfully added PR strategy template: ${name}`,
+            },
+          ],
+        };
+      }
+
+      case 'update_pr_templates_file': {
+        const content = args?.content as string;
+        if (!content) {
+          throw new Error('content is required');
+        }
+
+        await templateManager.updateTemplates(content);
+
+        return {
+          content: [
+            {
+              type: 'text',
+              text: 'Successfully updated PR templates file',
             },
           ],
         };

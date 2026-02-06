@@ -53,3 +53,11 @@ export interface PullRequestChange {
   content?: string;
   diff?: string;
 }
+
+export interface PRStrategyTemplate {
+  name: string;
+  description: string;
+  prompt: string;
+  category: string;
+  dateAdded: string;
+}

@@ -10,6 +10,7 @@ A Model Context Protocol (MCP) server that integrates with Azure DevOps to manag
 - 📚 **Pattern Tracking**: Maintain and update coding patterns in `.pd/pattern.md`
 - 🔄 **PR Changes**: Get all file changes (diffs) for a PR to review code modifications
 - ✅ **Comment Status Updates**: Mark PR comments as fixed, closed, or reactivate them
+- 📋 **PR Strategy Templates**: Access review templates with helpful prompts for different PR types
 - 🤖 **AI Integration**: Works seamlessly with GitHub Copilot and other MCP-compatible AI tools
 
 ## Prerequisites
@@ -198,6 +199,79 @@ Update the status of a pull request comment thread.
 Mark thread 72758 as fixed in PR 10692
 ```
 
+### `get_pr_strategy_templates`
+Get all available PR review strategy templates.
+
+**Parameters:**
+- None
+
+**Returns:**
+- Full content of `.pd/pr-templates.md` with all templates
+
+**Example:**
+```
+Show me all PR strategy templates
+```
+
+### `list_pr_strategy_templates`
+List all available template names and categories.
+
+**Parameters:**
+- None
+
+**Returns:**
+- List of template names with their categories
+
+**Example:**
+```
+List available review templates
+```
+
+### `get_pr_strategy_template`
+Get a specific PR review strategy template by name.
+
+**Parameters:**
+- `name` (string): Template name (e.g., "Bug Fix Review", "Feature Review")
+
+**Returns:**
+- Template with review prompt and guidance
+
+**Example:**
+```
+Get the Bug Fix Review template
+```
+
+### `add_pr_strategy_template`
+Add a new custom PR strategy template.
+
+**Parameters:**
+- `name` (string): Template name
+- `prompt` (string): Review guidance prompt
+- `category` (string): Category (e.g., "Security", "Performance")
+- `description` (string, optional): When to use this template
+
+**Returns:**
+- Success confirmation
+
+**Example:**
+```
+Add a template for security reviews
+```
+
+### `update_pr_templates_file`
+Replace the entire PR templates file with new content.
+
+**Parameters:**
+- `content` (string): Full markdown content
+
+**Returns:**
+- Success confirmation
+
+**Example:**
+```
+Update the templates file with new organization
+```
+
 ## Workflow Example
 
 Here's a typical workflow using this MCP server with GitHub Copilot:
@@ -230,11 +304,13 @@ Here's a typical workflow using this MCP server with GitHub Copilot:
 │   ├── index.ts                 # Main MCP server entry point
 │   ├── azure-devops-service.ts  # Azure DevOps API integration
 │   ├── pattern-manager.ts       # Pattern file management
+│   ├── template-manager.ts      # PR strategy template management
 │   ├── config.ts                # Configuration loader
 │   └── types.ts                 # TypeScript type definitions
 ├── dist/                        # Compiled JavaScript output
 ├── .pd/
-│   └── pattern.md              # Coding patterns documentation
+│   ├── pattern.md              # Coding patterns documentation
+│   └── pr-templates.md         # PR review strategy templates
 ├── package.json
 ├── tsconfig.json
 └── README.md
