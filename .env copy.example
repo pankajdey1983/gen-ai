@@ -1,0 +1,14 @@
+# Example .env file
+# Copy this to .env and fill in your actual values
+
+# Azure DevOps organization URL (e.g., https://dev.azure.com/your-org)
+AZURE_DEVOPS_ORG_URL=https://dev.azure.com/your-organization
+
+# Personal Access Token with Code (Read & Write) permissions
+AZURE_DEVOPS_PAT=your-personal-access-token-here
+
+# Project name in Azure DevOps
+AZURE_DEVOPS_PROJECT=YourProjectName
+
+# Repository name in the project
+AZURE_DEVOPS_REPOSITORY=YourRepositoryName
