@@ -585,7 +585,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
       }
 
       case 'get_pr_strategy_templates': {
-        const templates = await templateManager.readTempglates();
+        const templates = await templateManager.readTemplates();
         return {
           content: [
             {

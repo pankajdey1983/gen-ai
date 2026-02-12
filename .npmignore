@@ -1,0 +1,37 @@
+# Ignore source files
+src/
+tsconfig.json
+
+# Ignore tests
+test-*.js
+*.test.js
+*.spec.js
+
+# Ignore development files
+.env
+.env.example
+.env copy.example
+
+# Ignore documentation (except what's in files array)
+TESTING.md
+TROUBLESHOOTING.md
+GIT-COMMANDS.md
+UPDATE-COMMENT-STATUS.md
+REPOSITORY-UPDATE.md
+QUICKSTART.md
+EXAMPLES-PR-TEMPLATES.md
+FEATURE-TEMPLATES.md
+
+# Ignore git
+.git
+.gitignore
+
+# Ignore IDE
+.vscode/
+.idea/
+
+# Ignore node modules (already excluded by default)
+node_modules/
+
+# Keep only dist folder
+!dist/
